@@ -1,0 +1,309 @@
+{% extends 'basedash.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="report-header">
+        <h2>Laporan</h2>
+        <form id="dateFilterForm" class="date-filter">
+            <input type="date" class="form-control date-picker" name="start_date" 
+            placeholder="{{ 'dd/mm/yyyy' if not request.args.get('start_date') else request.args.get('start_date') }}"                    
+            value="{{ request.args.get('start_date', '') }}" >
+            <input type="date" class="form-control date-picker" name="end_date" 
+            placeholder="{{ 'dd/mm/yyyy' if not request.args.get('end_date') else request.args.get('end_date') }}"                    
+            value="{{ request.args.get('end_date', '') }}" >
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#financial">Laporan Keuangan</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#complaints">Laporan Keluhan</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#returns">Laporan Pengembalian</a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Tab Keuangan -->
+        <div id="financial" class="tab-pane active">
+            <div class="row g-4">
+
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h3>Transaksi Online</h3>
+                        <div class="transaction-summary">
+                            <div class="count-info">
+                                <span class="label">Total Transaksi:</span>
+                                <span class="value">{{ online_count }}</span>
+                            </div>
+                            <div class="revenue-info">
+                                <span class="label">Total Pendapatan:</span>
+                                <span class="total-amount">Rp {{ "{:,.0f}".format(online_revenue).replace(",", ".") }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h3>Transaksi Offline</h3>
+                        <div class="transaction-summary">
+                            <div class="count-info">
+                                <span class="label">Total Transaksi:</span>
+                                <span class="value">{{ offline_count }}</span>
+                            </div>
+                            <div class="revenue-info">
+                                <span class="label">Total Pendapatan:</span>
+                                <span class="total-amount">Rp {{ "{:,.0f}".format(offline_revenue).replace(",", ".") }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Total Revenue -->
+                <div class="report-card mt-3">
+                    <h3 class="mb-2">Total Pendapatan Keseluruhan</h3>
+                    <div class="text-center">
+                        <span class="total-amount">Rp {{ "{:,.0f}".format(total_revenue).replace(",", ".") }}</span>
+                    </div>
+                </div>
+
+        
+                <!-- Ringkasan Status Pesanan -->
+                <div class="col-12">
+                    <div class="report-card">
+                        <h3>Ringkasan Status Order</h3>
+                        <div class="status-summary">
+                            {% for status, count in status_summary %}
+                            <div class="status-item">
+                                <span class="status-label">{{ status }}</span>
+                                <span class="status-count">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="report-card mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 class="mb-0">Detail Pesanan</h3>
+                            <a href="{{ url_for('report.generate_pdf', start_date=start_date, end_date=end_date) }}" class="btn btn-primary">
+                                <i class="fas fa-file-pdf"></i> Cetak PDF
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" id="orderTable">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID Pesanan</th>
+                                            <th>Pelanggan</th>
+                                            <th>WhatsApp</th>
+                                            <th>Status</th>
+                                            <th>Tipe</th>
+                                            <th>Pesanan Dibuat</th>
+                                            <th>Total Awal</th>
+                                            <th>Pengembalian</th>
+                                            <th>Total Akhir</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        {% set initial_total = order.total %}
+                                        {% set returns_total = namespace(value=0) %}
+                                        {% for detail in order.details %}
+                                            {% for return_order in detail.return_request %}
+                                                {% if return_order.status == 'Selesai' %}
+                                                    {% set returns_total.value = returns_total.value + (detail.price * return_order.quantity) %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endfor %}
+                                        {% set final_total = initial_total - returns_total.value %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.customer_name if order.is_offline else order.user.full_name }}</td>
+                                            <td>{{ order.customer_phone if order.is_offline else order.user.phone }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 
+                                                    'success' if order.status == 'Selesai' 
+                                                    else 'danger' if order.status == 'Gagal'
+                                                    else 'warning' if order.status == 'Siap Diambil'
+                                                    else 'info' }}">
+                                                    {{ order.status }}
+                                                </span>
+                                            </td>
+                                            <td>{{ 'Offline' if order.is_offline else 'Online' }}</td>
+                                            <td>{{ order.date_added.strftime('%d-%m-%Y %H:%M') }}</td>
+                                            <td>Rp {{ "{:,.0f}".format(initial_total).replace(",", ".") }}</td>
+                                            <td class="text-danger">
+                                                {% if returns_total.value > 0 %}
+                                                    Rp {{ "{:,.0f}".format(returns_total.value).replace(",", ".") }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>Rp {{ "{:,.0f}".format(final_total).replace(",", ".") }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <div>
+                                    Menampilkan {{ orders.first }} - {{ orders.last }} dari {{ orders.total }} pesanan
+                                </div>
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination">
+                                        {% if orders.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('report.view_report', 
+                                                page=orders.prev_num,
+                                                start_date=request.args.get('start_date'),
+                                                end_date=request.args.get('end_date')) }}" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% for page_num in orders.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                                            {% if page_num %}
+                                                <li class="page-item {% if page_num == orders.page %}active{% endif %}">
+                                                    <a class="page-link" href="{{ url_for('report.view_report', 
+                                                        page=page_num,
+                                                        start_date=request.args.get('start_date'),
+                                                        end_date=request.args.get('end_date')) }}">
+                                                        {{ page_num }}
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                            {% endif %}
+                                        {% endfor %}
+                        
+                                        {% if orders.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('report.view_report', 
+                                                page=orders.next_num,
+                                                start_date=request.args.get('start_date'),
+                                                end_date=request.args.get('end_date')) }}" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Complaint -->
+        <div id="complaints" class="tab-pane fade">
+            <div class="report-card">
+                <h3>Ringkasan Status Keluhan</h3>
+                <div class="complaint-summary">
+                    {% for status, count in complaint_summary %}
+                    <div class="complaint-item">
+                        <span class="complaint-status">{{ status }}</span>
+                        <span class="complaint-count">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="returns" class="tab-pane fade">
+        <div class="report-card">
+            <h3>Ringkasan Status Pengembalian</h3>
+            <div class="return-summary">
+                {% for status, count in return_summary %}
+                <div class="return-status-item">
+                    <span class="status-label">{{ status }}</span>
+                    <span class="status-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="report-card">
+            <h3>Detail Pengembalian per Variant</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Produk</th>
+                            <th>Variant</th>
+                            <th>Tipe</th>
+                            <th>Total Terjual</th>
+                            <th>Total Dikembalikan</th>
+                            <th>Persentase Pengembalian</th>
+                            <th>Nilai Pengembalian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for variant in variant_returns %}
+                        {% if variant.total_sold > 0 or variant.total_returns > 0 %}
+                        <tr>
+                            <td>{{ variant.product_name }}</td>
+                            <td>{{ variant.variant_name }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'primary' if variant.variant_type == 'default' 
+                                                     else 'success' if variant.variant_type == 'refill'
+                                                     else 'warning' }}">
+                                    {{ variant.variant_type }}
+                                </span>
+                            </td>
+                            <td>{{ variant.total_sold }}</td>
+                            <td>{{ variant.total_returns }}</td>
+                            <td>{{ "%.2f"|format(variant.return_percentage) }}%</td>
+                            <td>Rp {{ "{:,.0f}".format(variant.return_value).replace(",", ".") }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<script> 
+
+</script>
+
+<style>
+    .card {
+        margin-bottom: 1rem; 
+    }
+    
+    .row.g-4 {
+        --bs-gutter-y: 1rem; 
+    }
+    
+    .report-card {
+        padding: 1rem;
+        margin-bottom: 1rem; 
+    }
+    
+    .transaction-summary {
+        padding: 0.5rem 0;
+    }
+    
+    .count-info, .revenue-info {
+        margin: 0.5rem 0;
+    }
+    
+
+    </style>
+{% endblock %}

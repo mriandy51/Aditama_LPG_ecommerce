@@ -1,0 +1,118 @@
+Folder PATH listing for volume OS
+Volume serial number is 144C-2C01
+C:.
+|   app.py
+|   requirements.txt
+|   struktur_file.txt
+|   gunicorn_config.py
+|   
++---.vscode
+|       settings.json
+|       
++---instance
+|       database.sqlite3
+|       
++---media
+|       404.png
+|       fb.png
+|       homeGas.png
+|       tabung12kg.png
+|       tabung3kg.png
+|       tabung5_5kg.png
+|       test.png
+|       truck.png
+|       
++---migrations
+|   |   alembic.ini
+|   |   env.py
+|   |   README
+|   |   script.py.mako
+|   |   
+|   +---versions
+|   |   |   868fe8b6e3a7_change_whatsapp_field_to_string.py
+|   |   |   
+|   |   \---__pycache__
+|   |           868fe8b6e3a7_change_whatsapp_field_to_string.cpython-39.pyc
+|   |           
+|   \---__pycache__
+|           env.cpython-39.pyc
+|           
++---website
+|   |   admin.py
+|   |   auth.py
+|   |   contact.py
+|   |   forms.py
+|   |   info.py
+|   |   midtrans.py
+|   |   models.py
+|   |   report.py
+|   |   shop.py
+|   |   views.py
+|   |   __init__.py
+|   |   
+|   +---static
+|   |   |   OneSignalSDKUpdaterWorker.js
+|   |   |   OneSignalSDKWorker.js
+|   |   |   
+|   |   +---css
+|   |   |       dashstyle.css
+|   |   |       styles.css
+|   |   |       
+|   |   +---img
+|   |   |       404.png
+|   |   |       homeGas.png
+|   |   |       test.png
+|   |   |       truck.png
+|   |   |       -Pngtree-gas cylinder vector_5440405.png
+|   |   |       
+|   |   \---js
+|   |           main.js
+|   |           push.js
+|   |           sw.js
+|   |           
+|   +---templates
+|   |       404.html
+|   |       base.html
+|   |       basedash.html
+|   |       cart.html
+|   |       change_password.html
+|   |       contact.html
+|   |       dashcomplaint.html
+|   |       dashfinancial.html
+|   |       dashgastruck.html
+|   |       dashorder.html
+|   |       dashproduct.html
+|   |       dashuser.html
+|   |       index.html
+|   |       info.html
+|   |       login.html
+|   |       manage_returns.html
+|   |       orders.html
+|   |       orders_update.html
+|   |       order_details.html
+|   |       payment.html
+|   |       profile.html
+|   |       report.html
+|   |       return_history.html
+|   |       shop.html
+|   |       signup.html
+|   |       test.html
+|   |       update_item.html
+|   |       
+|   \---__pycache__
+|           admin.cpython-39.pyc
+|           auth.cpython-39.pyc
+|           contact.cpython-39.pyc
+|           financial.cpython-39.pyc
+|           forms.cpython-39.pyc
+|           info.cpython-39.pyc
+|           midtrans.cpython-39.pyc
+|           models.cpython-39.pyc
+|           report.cpython-39.pyc
+|           shop.cpython-39.pyc
+|           views.cpython-39.pyc
+|           __init__.cpython-39.pyc
+|           
+\---__pycache__
+        app.cpython-39.pyc
+        
